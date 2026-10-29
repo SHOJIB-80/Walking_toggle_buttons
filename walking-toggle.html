@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Walking Toggle Switch</title>
+<style>
+:root {
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  color-scheme: light;
+  --bg: #f3efe6;
+  --card: #fffdf8;
+  --ink: #2b2a33;
+  --muted: #7b7889;
+  --track-off: #d9d4c7;
+  --ground: #cfc9b8;
+  --face: #fffdf8;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #17161d; --card: #211f2a; --ink: #f1eee8; --muted: #9a97aa;
+    --track-off: #3a3747; --ground: #3a3747; --face: #211f2a;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #17161d; --card: #211f2a; --ink: #f1eee8; --muted: #9a97aa;
+  --track-off: #3a3747; --ground: #3a3747; --face: #211f2a;
+}
+html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  margin: 0; min-height: 100vh; background: var(--bg); color: var(--ink);
+  font-family: "Trebuchet MS", "Segoe UI", system-ui, sans-serif;
+  display: grid; place-items: center; padding: 24px;
+}
+.card {
+  width: min(420px, 100%); background: var(--card); border-radius: 20px;
+  padding: 8px 24px; box-shadow: 0 1px 0 rgba(0,0,0,.04), 0 12px 40px rgba(0,0,0,.08);
+}
+.row {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 18px 0; cursor: pointer;
+}
+.row + .row { border-top: 1px solid var(--track-off); }
+.row__title { font-size: 1.05rem; font-weight: 700; }
+.row__state { font-size: .85rem; color: var(--muted); margin-top: 2px; }
+
+/* ---------- the switch ---------- */
+.switch {
+  --on: #3fae6a;
+  --w: 88px; --h: 44px; --head: 32px; --pad: 6px;
+  --travel: calc(var(--w) - var(--head) - var(--pad) * 2);
+  --dir: -1;
+  --look: -2px;
+  position: relative; flex: none; width: var(--w); height: 66px; display: block;
+}
+.switch[data-color="pink"]   { --on: #e0568a; }
+.switch[data-color="blue"]   { --on: #4a7be0; }
+.switch[data-color="orange"] { --on: #e8892f; }
+
+.switch__input {
+  position: absolute; inset: 0; width: 100%; height: 100%; margin: 0;
+  opacity: 0; cursor: pointer; z-index: 5;
+}
+.switch__ground {
+  position: absolute; left: 4px; right: 4px; bottom: 2px; height: 3px;
+  border-radius: 3px; background: var(--ground);
+}
+.switch__track {
+  position: absolute; top: 0; left: 0; width: var(--w); height: var(--h);
+  border-radius: 999px; background: var(--track-off); overflow: hidden;
+  transition: background-color .45s ease;
+}
+/* colour fill that follows the walker */
+.switch__track::before {
+  content: ""; position: absolute; inset: 0; background: var(--on);
+  transform: scaleX(0); transform-origin: left; border-radius: inherit;
+  transition: transform .7s cubic-bezier(.5,0,.2,1);
+}
+.switch__input:checked ~ .switch__track::before { transform: scaleX(1); }
+.switch__input:focus-visible ~ .switch__track {
+  outline: 3px solid var(--ink); outline-offset: 4px;
+}
+
+.walker {
+  position: absolute; top: var(--pad); left: var(--pad);
+  width: var(--head); height: 60px; pointer-events: none; z-index: 2;
+  transition: transform .7s cubic-bezier(.5,0,.2,1);
+}
+.switch__input:checked ~ .walker { transform: translateX(var(--travel)); --dir: 1; --look: 2px; }
+.switch__input:checked ~ .walker .legs { --dir: 1; }
+
+.legs { position: absolute; inset: 0; transform: scaleX(var(--dir, -1)); }
+.leg {
+  position: absolute; top: 24px; width: 3px; height: 30px; border-radius: 3px;
+  background: var(--ink); transform-origin: 50% 0;
+  transition: transform .2s ease;
+}
+.leg::after {                       /* foot */
+  content: ""; position: absolute; left: 0; bottom: 0; width: 8px; height: 3px;
+  border-radius: 3px; background: var(--ink);
+}
+.leg--a { left: 9px; }
+.leg--b { left: 20px; }
+
+.head {
+  position: absolute; top: 0; left: 0; width: var(--head); height: var(--head);
+  border-radius: 50%; background: var(--face); color: var(--ink);
+  box-shadow: inset 0 0 0 2px var(--ink);
+  transition: transform .15s ease;
+}
+.switch__input:active ~ .walker .head { transform: scale(1.12, .9); }
+
+.eyes {
+  position: absolute; top: 11px; left: 0; width: 100%; height: 8px;
+  transform: translateX(var(--look, -2px)); transition: transform .5s ease;
+}
+.eye {
+  position: absolute; top: 0; width: 6px; height: 8px; border-radius: 50%;
+  background: var(--ink); transform-origin: center;
+  animation: blink 4.5s infinite;
+  transform: scaleY(.18);          /* sleepy when off */
+  transition: transform .3s ease;
+}
+.eye--l { left: 7px; } .eye--r { left: 19px; }
+.switch__input:checked ~ .walker .eye { transform: scaleY(1); }
+
+.mouth {
+  position: absolute; left: 50%; top: 21px; width: 10px; height: 2px;
+  margin-left: -5px; background: var(--ink); border-radius: 2px;
+  transform: translateX(var(--look, -2px));
+  transition: height .3s ease, border-radius .3s ease, transform .5s ease;
+}
+.switch__input:checked ~ .walker .mouth { height: 6px; border-radius: 0 0 10px 10px; }
+
+@keyframes blink {
+  0%, 94%, 100% { translate: 0 0; scale: 1 1; }
+  97% { scale: 1 .1; }
+}
+
+/* ---------- walking ---------- */
+.switch.is-walking .walker .head { animation: hop .35s ease-in-out infinite; }
+.switch.is-walking .leg--a { animation: step .35s ease-in-out infinite alternate; }
+.switch.is-walking .leg--b { animation: step .35s ease-in-out infinite alternate-reverse; }
+.switch.is-landing .head { animation: land .35s ease-out; }
+
+@keyframes step { from { transform: rotate(-32deg); } to { transform: rotate(32deg); } }
+@keyframes hop  { 0%, 100% { translate: 0 0; } 50% { translate: 0 -3px; } }
+@keyframes land {
+  0% { transform: scale(1.18, .82); } 55% { transform: scale(.92, 1.08); } 100% { transform: scale(1); }
+}
+
+/* dust puffs */
+.puff {
+  position: absolute; bottom: 3px; width: 8px; height: 8px; border-radius: 50%;
+  background: var(--ground); opacity: 0; pointer-events: none; z-index: 1;
+  animation: puff .6s ease-out forwards;
+}
+@keyframes puff {
+  0% { opacity: .9; transform: translate(0, 0) scale(.4); }
+  100% { opacity: 0; transform: translate(var(--dx), -14px) scale(1.4); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .walker, .switch__track::before, .eye, .mouth, .eyes { transition-duration: .01s; }
+  .switch.is-walking .head, .switch.is-walking .leg, .switch.is-landing .head, .puff { animation: none; }
+}
+</style>
+</head>
+<body>
+<main class="card">
+  <label class="row">
+    <span><div class="row__title">Wi‑Fi</div><div class="row__state" data-state>Off</div></span>
+    <span class="switch" data-color="green">
+      <input class="switch__input" type="checkbox" role="switch" aria-label="Wi‑Fi" />
+      <span class="switch__ground"></span><span class="switch__track"></span>
+      <span class="walker"><span class="legs"><i class="leg leg--a"></i><i class="leg leg--b"></i></span>
+        <span class="head"><span class="eyes"><i class="eye eye--l"></i><i class="eye eye--r"></i></span><span class="mouth"></span></span>
+      </span>
+    </span>
+  </label>
+
+  <label class="row">
+    <span><div class="row__title">Notifications</div><div class="row__state" data-state>Off</div></span>
+    <span class="switch" data-color="pink">
+      <input class="switch__input" type="checkbox" role="switch" aria-label="Notifications" />
+      <span class="switch__ground"></span><span class="switch__track"></span>
+      <span class="walker"><span class="legs"><i class="leg leg--a"></i><i class="leg leg--b"></i></span>
+        <span class="head"><span class="eyes"><i class="eye eye--l"></i><i class="eye eye--r"></i></span><span class="mouth"></span></span>
+      </span>
+    </span>
+  </label>
+
+  <label class="row">
+    <span><div class="row__title">Auto-save</div><div class="row__state" data-state>On</div></span>
+    <span class="switch" data-color="blue">
+      <input class="switch__input" type="checkbox" role="switch" aria-label="Auto-save" checked />
+      <span class="switch__ground"></span><span class="switch__track"></span>
+      <span class="walker"><span class="legs"><i class="leg leg--a"></i><i class="leg leg--b"></i></span>
+        <span class="head"><span class="eyes"><i class="eye eye--l"></i><i class="eye eye--r"></i></span><span class="mouth"></span></span>
+      </span>
+    </span>
+  </label>
+</main>
+
+<script>
+(function () {
+  var WALK_MS = 700;
+  var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  document.querySelectorAll(".switch").forEach(function (sw) {
+    var input = sw.querySelector(".switch__input");
+    var state = sw.closest(".row").querySelector("[data-state]");
+    var timer;
+
+    function spawnDust(goingOn) {
+      var startX = goingOn ? 14 : 66;            // where the walker's feet start
+      var away = goingOn ? -1 : 1;               // puffs trail behind the walker
+      for (var i = 0; i < 3; i++) {
+        var p = document.createElement("i");
+        p.className = "puff";
+        p.style.left = startX + i * 5 + "px";
+        p.style.setProperty("--dx", away * (6 + i * 7) + "px");
+        p.style.animationDelay = i * 70 + "ms";
+        sw.appendChild(p);
+        setTimeout(function (el) { el.remove(); }, 900, p);
+      }
+    }
+
+    input.addEventListener("change", function () {
+      state.textContent = input.checked ? "On" : "Off";
+      if (reduce) return;
+      clearTimeout(timer);
+      sw.classList.remove("is-landing");
+      sw.classList.add("is-walking");
+      spawnDust(input.checked);
+      timer = setTimeout(function () {
+        sw.classList.remove("is-walking");
+        sw.classList.add("is-landing");
+        setTimeout(function () { sw.classList.remove("is-landing"); }, 360);
+      }, WALK_MS);
+    });
+  });
+})();
+</script>
+</body>
+</html>
